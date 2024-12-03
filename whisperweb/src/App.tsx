@@ -193,6 +193,39 @@ function App() {
     }
   }, [sessions, createNewSession, setActiveSessionId]);
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const baseUrl = urlParams.get('base_url');
+    const apiKey = urlParams.get('api_key');
+    const model = urlParams.get('model');
+  
+    let updated = false;
+  
+    setSettings((prevSettings) => {
+      const newSettings = { ...prevSettings };
+      if (baseUrl) {
+        newSettings.api.baseUrl = baseUrl;
+        updated = true;
+      }
+      if (apiKey) {
+        newSettings.api.apiKey = apiKey;
+        updated = true;
+      }
+      if (model) {
+        newSettings.api.model = model;
+        updated = true;
+      }
+      return newSettings;
+    });
+  
+    if (updated) {
+      showNotification('Successfully updated parameters from the URL', 'success');
+      // 移除 URL 中的查询参数
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 仅在组件初次渲染时执行  
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
