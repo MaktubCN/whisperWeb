@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
 import {
   ThemeProvider,
   CssBaseline,
@@ -33,21 +33,23 @@ import {
   IconList,
   IconHeadset,
   IconApi,
-  IconBrandTabler,
   IconMoon,
   IconSun,
   IconChevronLeft,
-  IconChevronRight,
   IconEdit,
   IconTrash,
   IconPlus,
+  IconEye,
+  IconEyeOff,
+  IconCopy,
+  IconMenu2, // Sidebar toggle icon
 } from '@tabler/icons-react';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 
-import { Settings, TranscriptionEntry } from './types';
+import { Settings, TranscriptionEntry } from './types'; 
 import TranscriptionTable from './components/TranscriptionTable';
 import AudioRecorder from './components/AudioRecorder';
 import Notification from './components/Notification';
@@ -57,7 +59,7 @@ import useTranscriptionService from './hooks/useTranscriptionService';
 import { loadSettings, saveSettings } from './utils/storage';
 
 const drawerWidth = 240; // Width of the sidebar
-
+  
 const defaultSettings: Settings = {
   view: {
     fontSize: 'medium',
@@ -90,6 +92,9 @@ function App() {
   const [whisperSettingsOpen, setWhisperSettingsOpen] = useState(false);
   const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
 
+  // Focus Mode State
+  const [focusMode, setFocusMode] = useState(true);
+
   const { showNotification, notificationProps } = useNotification();
   const {
     sessions,
@@ -99,21 +104,24 @@ function App() {
     addEntryToSession,
     deleteSession,
     renameSession,
-    updateSessionDuration,
     setSessionRecordingState,
     getSessionEntries,
     setActiveSessionId,
     updateSessionEntries,
   } = useSessionManagement();
 
+  // New State for Recording Start Time and Duration
+  const [recordingStartTime, setRecordingStartTime] = useState<Date | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState<string>('00:00:00');
+
   const handleTranscriptionComplete = useCallback(
     (entry: TranscriptionEntry) => {
       if (activeSessionId) {
         addEntryToSession(activeSessionId, entry);
-        showNotification('Transcription completed successfully', 'success');
+        // showNotification('Transcription completed successfully', 'success');
       }
     },
-    [activeSessionId, addEntryToSession, showNotification]
+    [activeSessionId, addEntryToSession]
   );
 
   const handleTranscriptionError = useCallback(
@@ -148,24 +156,42 @@ function App() {
     saveSettings(settings);
   }, [settings]);
 
+  // Effect to Update Recording Duration
   useEffect(() => {
-    if (currentSession) {
-      const interval = setInterval(() => {
-        const startTime = new Date(currentSession.startTime);
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isRecording && recordingStartTime) {
+      interval = setInterval(() => {
         const now = new Date();
-        const diff = now.getTime() - startTime.getTime();
+        const diff = now.getTime() - recordingStartTime.getTime();
         const hours = Math.floor(diff / 3600000);
         const minutes = Math.floor((diff % 3600000) / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
-        const duration = `${hours.toString().padStart(2, '0')}:${minutes
-          .toString()
-          .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-        updateSessionDuration(duration);
+        setRecordingDuration(
+          `${hours.toString().padStart(2, '0')}:${minutes
+            .toString()
+            .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        );
       }, 1000);
-
-      return () => clearInterval(interval);
+    } else {
+      setRecordingDuration('00:00:00');
     }
-  }, [currentSession, updateSessionDuration]);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRecording, recordingStartTime]);
+
+  // Auto-select or create session on initial load
+  useEffect(() => {
+    if (sessions.length > 0) {
+      const latestSession = sessions[sessions.length - 1];
+      setActiveSessionId(latestSession.id);
+    } else {
+      const newSessionId = createNewSession();
+      setActiveSessionId(newSessionId);
+    }
+  }, [sessions, createNewSession, setActiveSessionId]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -194,11 +220,21 @@ function App() {
       const newSessionId = createNewSession();
       setActiveSessionId(newSessionId);
     }
+
     setIsRecording(recording);
     setSessionRecordingState(recording);
+
+    if (recording) {
+      // Set Recording Start Time
+      setRecordingStartTime(new Date());
+    } else {
+      setRecordingStartTime(null);
+    }
   };
 
   const handleAudioData = async (blob: Blob) => {
+    // Prevent processing if not recording
+    if (!isRecording) return;
     await processAudioData(blob);
   };
 
@@ -220,21 +256,69 @@ function App() {
     showNotification('Session deleted successfully', 'success');
   };
 
-  const handleDeleteEntry = (entryId: string) => {
+  const handleDeleteEntries = (entryIds: string[]) => {
     if (activeSessionId) {
       const entries = getSessionEntries(activeSessionId);
-      const updatedEntries = entries.filter((entry) => entry.id !== entryId);
+      const updatedEntries = entries.filter((entry) => !entryIds.includes(entry.id));
       updateSessionEntries(activeSessionId, updatedEntries);
-      showNotification('Entry deleted successfully', 'success');
+      showNotification('Entries deleted successfully', 'success');
+      setSelectedEntries([]);
     }
   };
 
-  // Added Function: Handle Adding New Transcription
+  const handleCopyEntries = (entryIds: string[]) => {
+    if (activeSessionId) {
+      const entries = getSessionEntries(activeSessionId);
+      const selectedEntriesText = entries
+        .filter((entry) => entryIds.includes(entry.id))
+        .map((entry) => entry.transcription)
+        .join('\n');
+      navigator.clipboard.writeText(selectedEntriesText);
+      showNotification('Selected entries copied to clipboard', 'success');
+    }
+  };
+
+  // Handle Adding New Transcription
   const handleAddNewTranscription = () => {
     const newSessionId = createNewSession();
     setActiveSessionId(newSessionId);
     setIsRecording(false);
   };
+
+  // Selection State
+  const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+
+  const handleSelectEntry = (id: string) => {
+    setSelectedEntries((prevSelected) =>
+      prevSelected.includes(id) ? prevSelected.filter((entryId) => entryId !== id) : [...prevSelected, id]
+    );
+  };
+
+  // Reference to the TranscriptionTable
+  const transcriptionTableRef = useRef<HTMLDivElement | null>(null);
+
+  // Get entries length safely
+  const entries = activeSessionId ? getSessionEntries(activeSessionId) : [];
+  const entriesLength = entries.length;
+
+  // Use useEffect to ensure scrolling happens after DOM updates
+  useEffect(() => {
+    if (focusMode && transcriptionTableRef.current) {
+      transcriptionTableRef.current.scrollTop = transcriptionTableRef.current.scrollHeight;
+    }
+  }, [entriesLength, focusMode]);
+
+  // Toggle Focus Mode
+  const toggleFocusMode = () => {
+    setFocusMode(!focusMode);
+  };
+
+  // Action Bar Visibility
+  const hasSelectedEntries = selectedEntries.length > 0;
+
+  // Get Recording Start Time and Duration for Footer
+  const startTime = recordingStartTime ? recordingStartTime.toLocaleTimeString() : '--:--:--';
+  const duration = recordingDuration;
 
   return (
     <ThemeProvider theme={theme}>
@@ -243,15 +327,15 @@ function App() {
         {/* AppBar */}
         <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
           <Toolbar>
-            <IconButton edge="start" color="inherit" sx={{ mr: 2 }}>
-              <IconBrandTabler />
+            {/* Sidebar Toggle Button */}
+            <IconButton edge="start" color="inherit" onClick={toggleDrawer} sx={{ mr: 2 }}>
+              <IconMenu2 />
             </IconButton>
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            {/* Centered WhisperWeb Text */}
+            <Typography variant="h6" component="div" sx={{ flexGrow: 1, textAlign: 'center' }}>
               WhisperWeb
             </Typography>
-            <IconButton color="inherit" onClick={toggleDrawer}>
-              {drawerOpen ? <IconChevronLeft /> : <IconChevronRight />}
-            </IconButton>
+            {/* Right-side Icons */}
             <IconButton color="inherit" onClick={toggleDarkMode}>
               {darkMode ? <IconSun /> : <IconMoon />}
             </IconButton>
@@ -272,27 +356,60 @@ function App() {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
-            mt: '64px',
-            mb: '64px',
-            overflow: 'auto',
+            mt: '64px', // Height of AppBar
+            mb: '64px', // Height of Footer
+            overflow: 'hidden', // Prevent scrolling on the body
             display: 'flex',
-            justifyContent: 'center', // Center the content horizontally
-            alignItems: 'flex-start', // Align content to the top
+            flexDirection: 'column',
+            position: 'relative', // For positioning the floating action bar
           }}
         >
-          <TranscriptionTable
-            entries={activeSessionId ? getSessionEntries(activeSessionId) : []}
-            showTimestamp={settings.view.showTimestamp}
-            enableTranslation={settings.whisper.enableTranslation}
-            onCopy={(entry) => {
-              navigator.clipboard.writeText(entry.transcription);
-              showNotification('Text copied to clipboard', 'success');
-            }}
-            onDelete={handleDeleteEntry}
-            selectedEntries={[]} // Implement selection logic if needed
-            onSelectEntry={() => {}} // Implement selection logic if needed
-          />
+          {/* Floating Action Bar for Selected Entries */}
+          {hasSelectedEntries && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                backgroundColor: theme.palette.background.paper,
+                zIndex: theme.zIndex.appBar + 1,
+                p: 1,
+                display: 'flex',
+                gap: 1,
+                boxShadow: theme.shadows[4],
+                borderRadius: 1,
+              }}
+            >
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<IconCopy />}
+                onClick={() => handleCopyEntries(selectedEntries)}
+              >
+                Copy
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<IconTrash />}
+                onClick={() => handleDeleteEntries(selectedEntries)}
+              >
+                Delete
+              </Button>
+            </Box>
+          )}
+
+          {/* Container for TranscriptionTable */}
+          <Box sx={{ flexGrow: 1, width: '100%', overflow: 'hidden' }}>
+            <TranscriptionTable
+              entries={entries}
+              showTimestamp={settings.view.showTimestamp}
+              enableTranslation={settings.whisper.enableTranslation}
+              selectedEntries={selectedEntries}
+              onSelectEntry={handleSelectEntry}
+              transcriptionTableRef={transcriptionTableRef}
+            />
+          </Box>
         </Box>
 
         {/* Footer with Audio Recorder */}
@@ -305,18 +422,50 @@ function App() {
             height: '64px',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
             px: 2,
             zIndex: (theme) => theme.zIndex.drawer + 1,
           }}
           elevation={3}
         >
-          <AudioRecorder
-            isRecording={isRecording}
-            onRecordingChange={handleRecordingChange}
-            requestInterval={settings.whisper.requestInterval}
-            onAudioData={handleAudioData}
-          />
+          {isRecording ? (
+            <>
+              {/* Start Time on the Left */}
+              <Typography variant="body1" sx={{ flexGrow: 1 }}>
+                Start: {startTime}
+              </Typography>
+
+              {/* Centered Focus Mode and Play Buttons */}
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <IconButton color="inherit" onClick={toggleFocusMode}>
+                  {focusMode ? <IconEye /> : <IconEyeOff />}
+                </IconButton>
+                <AudioRecorder
+                  isRecording={isRecording}
+                  onRecordingChange={handleRecordingChange}
+                  requestInterval={settings.whisper.requestInterval}
+                  onAudioData={handleAudioData}
+                />
+              </Box>
+
+              {/* Duration on the Right */}
+              <Typography variant="body1" sx={{ flexGrow: 1, textAlign: 'right' }}>
+                Duration: {duration}
+              </Typography>
+            </>
+          ) : (
+            // When not recording, center the focus mode and play buttons
+            <Box sx={{ display: 'flex', alignItems: 'center', margin: '0 auto' }}>
+              <IconButton color="inherit" onClick={toggleFocusMode}>
+                {focusMode ? <IconEye /> : <IconEyeOff />}
+              </IconButton>
+              <AudioRecorder
+                isRecording={isRecording}
+                onRecordingChange={handleRecordingChange}
+                requestInterval={settings.whisper.requestInterval}
+                onAudioData={handleAudioData}
+              />
+            </Box>
+          )}
         </Paper>
 
         {/* Drawer (Sidebar) */}
@@ -340,11 +489,13 @@ function App() {
               <IconChevronLeft />
             </IconButton>
           </Box>
+          {/* Add New Transcription Button */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
             <IconButton onClick={handleAddNewTranscription} color="primary" title="Add New Transcription">
               <IconPlus />
             </IconButton>
           </Box>
+          {/* Sessions List */}
           <List>
             {sessions.map((session) => (
               <ListItem
@@ -428,7 +579,7 @@ function App() {
               <InputLabel>Font Size</InputLabel>
               <Select
                 value={settings.view.fontSize}
-                onChange={(e) => handleSettingsChange('view', 'fontSize', e.target.value)}
+                onChange={(e) => handleSettingsChange('view', 'fontSize', e.target.value as any)}
               >
                 <MenuItem value="small">Small</MenuItem>
                 <MenuItem value="medium">Medium</MenuItem>
@@ -448,7 +599,7 @@ function App() {
               <InputLabel>System Language</InputLabel>
               <Select
                 value={settings.view.language}
-                onChange={(e) => handleSettingsChange('view', 'language', e.target.value)}
+                onChange={(e) => handleSettingsChange('view', 'language', e.target.value as any)}
               >
                 <MenuItem value="en">English</MenuItem>
                 <MenuItem value="es">Spanish</MenuItem>
@@ -469,7 +620,9 @@ function App() {
               <InputLabel>Recognition Language</InputLabel>
               <Select
                 value={settings.whisper.recognitionLanguage}
-                onChange={(e) => handleSettingsChange('whisper', 'recognitionLanguage', e.target.value)}
+                onChange={(e) =>
+                  handleSettingsChange('whisper', 'recognitionLanguage', e.target.value as any)
+                }
               >
                 <MenuItem value="auto">Auto Detect</MenuItem>
                 <MenuItem value="en">English</MenuItem>
@@ -483,13 +636,17 @@ function App() {
               type="number"
               label="Request Interval (seconds)"
               value={settings.whisper.requestInterval}
-              onChange={(e) => handleSettingsChange('whisper', 'requestInterval', Number(e.target.value))}
+              onChange={(e) =>
+                handleSettingsChange('whisper', 'requestInterval', Number(e.target.value))
+              }
             />
             <FormControlLabel
               control={
                 <Switch
                   checked={settings.whisper.enableTranslation}
-                  onChange={(e) => handleSettingsChange('whisper', 'enableTranslation', e.target.checked)}
+                  onChange={(e) =>
+                    handleSettingsChange('whisper', 'enableTranslation', e.target.checked)
+                  }
                 />
               }
               label="Enable Translation"
@@ -499,7 +656,9 @@ function App() {
                 <InputLabel>Target Language</InputLabel>
                 <Select
                   value={settings.whisper.targetLanguage}
-                  onChange={(e) => handleSettingsChange('whisper', 'targetLanguage', e.target.value)}
+                  onChange={(e) =>
+                    handleSettingsChange('whisper', 'targetLanguage', e.target.value as any)
+                  }
                 >
                   <MenuItem value="en">English</MenuItem>
                   <MenuItem value="es">Spanish</MenuItem>
@@ -536,9 +695,10 @@ function App() {
               <InputLabel>Model</InputLabel>
               <Select
                 value={settings.api.model}
-                onChange={(e) => handleSettingsChange('api', 'model', e.target.value)}
+                onChange={(e) => handleSettingsChange('api', 'model', e.target.value as any)}
               >
                 <MenuItem value="whisper-1">whisper-1</MenuItem>
+                <MenuItem value="openai/whisper-large-v2">openai/whisper-large-v2</MenuItem>
               </Select>
             </FormControl>
           </DialogContent>

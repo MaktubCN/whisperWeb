@@ -1,4 +1,5 @@
-  interface TranslationResponse {
+// services/translationService.ts
+interface TranslationResponse {
   choices: Array<{
     message: {
       content: string;
