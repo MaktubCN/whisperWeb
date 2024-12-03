@@ -27,6 +27,7 @@ import {
   FormControlLabel,
   TextField,
   ListItemSecondaryAction,
+  Backdrop,
 } from '@mui/material';
 import {
   IconList,
@@ -39,7 +40,7 @@ import {
   IconChevronRight,
   IconEdit,
   IconTrash,
-  IconPlus, // Import the IconPlus icon
+  IconPlus,
 } from '@tabler/icons-react';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
@@ -55,7 +56,7 @@ import useSessionManagement from './hooks/useSessionManagement';
 import useTranscriptionService from './hooks/useTranscriptionService';
 import { loadSettings, saveSettings } from './utils/storage';
 
-const drawerWidth = '25%';
+const drawerWidth = 240; // Width of the sidebar
 
 const defaultSettings: Settings = {
   view: {
@@ -78,7 +79,7 @@ const defaultSettings: Settings = {
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [settings, setSettings] = useState<Settings>(() => loadSettings(defaultSettings));
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
@@ -228,7 +229,7 @@ function App() {
     }
   };
 
-  // **Added Function: Handle Adding New Transcription**
+  // Added Function: Handle Adding New Transcription
   const handleAddNewTranscription = () => {
     const newSessionId = createNewSession();
     setActiveSessionId(newSessionId);
@@ -238,7 +239,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex', height: '100vh' }}>
+      <Box sx={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
         {/* AppBar */}
         <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
           <Toolbar>
@@ -248,6 +249,9 @@ function App() {
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
               WhisperWeb
             </Typography>
+            <IconButton color="inherit" onClick={toggleDrawer}>
+              {drawerOpen ? <IconChevronLeft /> : <IconChevronRight />}
+            </IconButton>
             <IconButton color="inherit" onClick={toggleDarkMode}>
               {darkMode ? <IconSun /> : <IconMoon />}
             </IconButton>
@@ -263,103 +267,6 @@ function App() {
           </Toolbar>
         </AppBar>
 
-        {/* Drawer (Sidebar) */}
-        <Drawer
-          variant="permanent"
-          sx={{
-            width: drawerOpen ? drawerWidth : '64px',
-            flexShrink: 0,
-            '& .MuiDrawer-paper': {
-              width: drawerOpen ? drawerWidth : '64px',
-              boxSizing: 'border-box',
-              top: '64px',
-              height: 'calc(100% - 128px)',
-              transition: (theme) =>
-                theme.transitions.create('width', {
-                  easing: theme.transitions.easing.sharp,
-                  duration: theme.transitions.duration.enteringScreen,
-                }),
-            },
-          }}
-        >
-          {/* **Updated Drawer Header: Added '+' Button** */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
-            <IconButton onClick={handleAddNewTranscription} color="primary" title="Add New Transcription">
-              <IconPlus />
-            </IconButton>
-            <IconButton onClick={toggleDrawer}>
-              {drawerOpen ? <IconChevronLeft /> : <IconChevronRight />}
-            </IconButton>
-          </Box>
-          <List>
-            {sessions.map((session) => (
-              <ListItem
-                key={session.id}
-                component="div"
-                sx={{
-                  cursor: 'pointer',
-                  bgcolor: session.id === activeSessionId ? 'action.selected' : 'inherit',
-                }}
-                onClick={() => setActiveSessionId(session.id)}
-              >
-                {drawerOpen && (
-                  <>
-                    {editingSessionId === session.id ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                        <TextField
-                          value={newSessionName}
-                          onChange={(e) => setNewSessionName(e.target.value)}
-                          size="small"
-                          fullWidth
-                          autoFocus
-                          onBlur={handleSaveSessionName}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleSaveSessionName();
-                            }
-                          }}
-                        />
-                      </Box>
-                    ) : (
-                      <>
-                        <ListItemText
-                          primary={session.name}
-                          secondary={new Date(session.timestamp).toLocaleString()}
-                        />
-                        <ListItemSecondaryAction>
-                          <IconButton
-                            edge="end"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleStartEditing(session.id, session.name);
-                            }}
-                            size="small"
-                            aria-label="edit"
-                          >
-                            <IconEdit size={18} />
-                          </IconButton>
-                          <IconButton
-                            edge="end"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteSession(session.id);
-                            }}
-                            size="small"
-                            color="error"
-                            aria-label="delete"
-                          >
-                            <IconTrash size={18} />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </>
-                    )}
-                  </>
-                )}
-              </ListItem>
-            ))}
-          </List>
-        </Drawer>
-
         {/* Main Content */}
         <Box
           component="main"
@@ -368,6 +275,10 @@ function App() {
             p: 3,
             mt: '64px',
             mb: '64px',
+            overflow: 'auto',
+            display: 'flex',
+            justifyContent: 'center', // Center the content horizontally
+            alignItems: 'flex-start', // Align content to the top
           }}
         >
           <TranscriptionTable
@@ -379,8 +290,8 @@ function App() {
               showNotification('Text copied to clipboard', 'success');
             }}
             onDelete={handleDeleteEntry}
-            selectedEntries={[]} // You can implement selection logic if needed
-            onSelectEntry={() => {}} // You can implement selection logic if needed
+            selectedEntries={[]} // Implement selection logic if needed
+            onSelectEntry={() => {}} // Implement selection logic if needed
           />
         </Box>
 
@@ -407,6 +318,107 @@ function App() {
             onAudioData={handleAudioData}
           />
         </Paper>
+
+        {/* Drawer (Sidebar) */}
+        <Drawer
+          variant="temporary"
+          open={drawerOpen}
+          onClose={toggleDrawer}
+          ModalProps={{
+            keepMounted: true, // Better open performance on mobile.
+          }}
+          sx={{
+            '& .MuiDrawer-paper': {
+              width: drawerWidth,
+              boxSizing: 'border-box',
+            },
+          }}
+        >
+          {/* Drawer Header */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+            <IconButton onClick={toggleDrawer}>
+              <IconChevronLeft />
+            </IconButton>
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+            <IconButton onClick={handleAddNewTranscription} color="primary" title="Add New Transcription">
+              <IconPlus />
+            </IconButton>
+          </Box>
+          <List>
+            {sessions.map((session) => (
+              <ListItem
+                key={session.id}
+                component="div"
+                sx={{
+                  cursor: 'pointer',
+                  bgcolor: session.id === activeSessionId ? 'action.selected' : 'inherit',
+                }}
+                onClick={() => {
+                  setActiveSessionId(session.id);
+                  toggleDrawer();
+                }}
+              >
+                {editingSessionId === session.id ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                    <TextField
+                      value={newSessionName}
+                      onChange={(e) => setNewSessionName(e.target.value)}
+                      size="small"
+                      fullWidth
+                      autoFocus
+                      onBlur={handleSaveSessionName}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveSessionName();
+                        }
+                      }}
+                    />
+                  </Box>
+                ) : (
+                  <>
+                    <ListItemText
+                      primary={session.name}
+                      secondary={new Date(session.timestamp).toLocaleString()}
+                    />
+                    <ListItemSecondaryAction>
+                      <IconButton
+                        edge="end"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStartEditing(session.id, session.name);
+                        }}
+                        size="small"
+                        aria-label="edit"
+                      >
+                        <IconEdit size={18} />
+                      </IconButton>
+                      <IconButton
+                        edge="end"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSession(session.id);
+                        }}
+                        size="small"
+                        color="error"
+                        aria-label="delete"
+                      >
+                        <IconTrash size={18} />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </>
+                )}
+              </ListItem>
+            ))}
+          </List>
+        </Drawer>
+
+        {/* Backdrop when the drawer is open */}
+        <Backdrop
+          open={drawerOpen}
+          onClick={toggleDrawer}
+          sx={{ zIndex: (theme) => theme.zIndex.drawer - 1 }}
+        />
 
         {/* View Settings Dialog */}
         <Dialog open={viewSettingsOpen} onClose={() => setViewSettingsOpen(false)}>

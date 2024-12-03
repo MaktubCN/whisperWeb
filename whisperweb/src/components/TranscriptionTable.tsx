@@ -1,3 +1,4 @@
+// TranscriptionTable.tsx
 import React from 'react';
 import {
   Paper,
@@ -5,7 +6,6 @@ import {
   TableBody,
   TableCell,
   TableContainer,
-  TableHead,
   TableRow,
   IconButton,
   Checkbox,
@@ -40,33 +40,9 @@ const TranscriptionTable: React.FC<TranscriptionTableProps> = ({
   onSelectEntry,
 }) => {
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell padding="checkbox">
-              <Checkbox
-                indeterminate={selectedEntries.length > 0 && selectedEntries.length < entries.length}
-                checked={entries.length > 0 && selectedEntries.length === entries.length}
-                onChange={() => {
-                  if (selectedEntries.length === entries.length) {
-                    selectedEntries.forEach(id => onSelectEntry(id));
-                  } else {
-                    entries.forEach(entry => {
-                      if (!selectedEntries.includes(entry.id)) {
-                        onSelectEntry(entry.id);
-                      }
-                    });
-                  }
-                }}
-              />
-            </TableCell>
-            {showTimestamp && <TableCell>Timestamp</TableCell>}
-            <TableCell>Transcription</TableCell>
-            {enableTranslation && <TableCell>Translation</TableCell>}
-            <TableCell align="right">Actions</TableCell>
-          </TableRow>
-        </TableHead>
+    <TableContainer component={Paper} sx={{ width: '100%' }}>
+      <Table sx={{ tableLayout: 'fixed' }}>
+        {/* Removed TableHead to eliminate headers */}
         <TableBody>
           {entries.length === 0 ? (
             <TableRow>
@@ -79,20 +55,24 @@ const TranscriptionTable: React.FC<TranscriptionTableProps> = ({
           ) : (
             entries.map((entry) => (
               <TableRow key={entry.id} selected={selectedEntries.includes(entry.id)}>
-                <TableCell padding="checkbox">
+                <TableCell padding="checkbox" sx={{ width: '40px' }}>
                   <Checkbox
                     checked={selectedEntries.includes(entry.id)}
                     onChange={() => onSelectEntry(entry.id)}
                   />
                 </TableCell>
-                {showTimestamp && <TableCell>{entry.timestamp}</TableCell>}
-                <TableCell>{entry.transcription}</TableCell>
-                {enableTranslation && <TableCell>{entry.translation}</TableCell>}
-                <TableCell align="right">
-                  <IconButton onClick={() => onCopy(entry)} size="small">
+                {showTimestamp && (
+                  <TableCell sx={{ width: '120px', whiteSpace: 'nowrap' }}>{entry.timestamp}</TableCell>
+                )}
+                <TableCell sx={{ wordBreak: 'break-word' }}>{entry.transcription}</TableCell>
+                {enableTranslation && (
+                  <TableCell sx={{ wordBreak: 'break-word' }}>{entry.translation}</TableCell>
+                )}
+                <TableCell align="right" sx={{ width: '80px' }}>
+                  <IconButton onClick={() => onCopy(entry)} size="small" aria-label="copy">
                     <IconCopy size={18} />
                   </IconButton>
-                  <IconButton onClick={() => onDelete(entry.id)} size="small" color="error">
+                  <IconButton onClick={() => onDelete(entry.id)} size="small" color="error" aria-label="delete">
                     <IconTrash size={18} />
                   </IconButton>
                 </TableCell>
