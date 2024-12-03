@@ -1,5 +1,9 @@
-interface TranslationResponse {
-  text: string;
+  interface TranslationResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
 }
 
 export async function translateText(
@@ -9,15 +13,22 @@ export async function translateText(
   baseUrl: string
 ): Promise<string> {
   try {
-    const response = await fetch(`${baseUrl}/v1/translations`, {
+    const prompt = `Translate the text into ${targetLanguage}; No further explanation is needed.: ${text}`;
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        text,
-        target_language: targetLanguage,
+        model: 'gpt-4o-mini',
+        max_tokens: 4096,
+        messages: [
+          {
+            role: 'user',
+            content: prompt,
+          },
+        ],
       }),
     });
 
@@ -26,7 +37,7 @@ export async function translateText(
     }
 
     const data: TranslationResponse = await response.json();
-    return data.text;
+    return data.choices[0].message.content.trim();
   } catch (error) {
     console.error('Translation error:', error);
     throw error;

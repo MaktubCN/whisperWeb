@@ -1,11 +1,12 @@
+// App.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  ThemeProvider, 
-  CssBaseline, 
-  Box, 
-  AppBar, 
-  Toolbar, 
-  IconButton, 
+import {
+  ThemeProvider,
+  CssBaseline,
+  Box,
+  AppBar,
+  Toolbar,
+  IconButton,
   Typography,
   Drawer,
   List,
@@ -27,9 +28,9 @@ import {
   TextField,
   ListItemSecondaryAction,
 } from '@mui/material';
-import { 
-  IconList, 
-  IconHeadset, 
+import {
+  IconList,
+  IconHeadset,
   IconApi,
   IconBrandTabler,
   IconMoon,
@@ -38,6 +39,7 @@ import {
   IconChevronRight,
   IconEdit,
   IconTrash,
+  IconPlus, // Import the IconPlus icon
 } from '@tabler/icons-react';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
@@ -103,16 +105,22 @@ function App() {
     updateSessionEntries,
   } = useSessionManagement();
 
-  const handleTranscriptionComplete = useCallback((entry: TranscriptionEntry) => {
-    if (activeSessionId) {
-      addEntryToSession(activeSessionId, entry);
-      showNotification('Transcription completed successfully', 'success');
-    }
-  }, [activeSessionId, addEntryToSession, showNotification]);
+  const handleTranscriptionComplete = useCallback(
+    (entry: TranscriptionEntry) => {
+      if (activeSessionId) {
+        addEntryToSession(activeSessionId, entry);
+        showNotification('Transcription completed successfully', 'success');
+      }
+    },
+    [activeSessionId, addEntryToSession, showNotification]
+  );
 
-  const handleTranscriptionError = useCallback((error: string) => {
-    showNotification(`Transcription failed: ${error}`, 'error');
-  }, [showNotification]);
+  const handleTranscriptionError = useCallback(
+    (error: string) => {
+      showNotification(`Transcription failed: ${error}`, 'error');
+    },
+    [showNotification]
+  );
 
   const { processAudioData } = useTranscriptionService({
     settings,
@@ -171,12 +179,12 @@ function App() {
     field: K,
     value: Settings[T][K]
   ) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
       [category]: {
         ...prev[category],
-        [field]: value
-      }
+        [field]: value,
+      },
     }));
   };
 
@@ -214,16 +222,24 @@ function App() {
   const handleDeleteEntry = (entryId: string) => {
     if (activeSessionId) {
       const entries = getSessionEntries(activeSessionId);
-      const updatedEntries = entries.filter(entry => entry.id !== entryId);
+      const updatedEntries = entries.filter((entry) => entry.id !== entryId);
       updateSessionEntries(activeSessionId, updatedEntries);
       showNotification('Entry deleted successfully', 'success');
     }
+  };
+
+  // **Added Function: Handle Adding New Transcription**
+  const handleAddNewTranscription = () => {
+    const newSessionId = createNewSession();
+    setActiveSessionId(newSessionId);
+    setIsRecording(false);
   };
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ display: 'flex', height: '100vh' }}>
+        {/* AppBar */}
         <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
           <Toolbar>
             <IconButton edge="start" color="inherit" sx={{ mr: 2 }}>
@@ -247,6 +263,7 @@ function App() {
           </Toolbar>
         </AppBar>
 
+        {/* Drawer (Sidebar) */}
         <Drawer
           variant="permanent"
           sx={{
@@ -257,26 +274,31 @@ function App() {
               boxSizing: 'border-box',
               top: '64px',
               height: 'calc(100% - 128px)',
-              transition: theme => theme.transitions.create('width', {
-                easing: theme.transitions.easing.sharp,
-                duration: theme.transitions.duration.enteringScreen,
-              }),
+              transition: (theme) =>
+                theme.transitions.create('width', {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.enteringScreen,
+                }),
             },
           }}
         >
+          {/* **Updated Drawer Header: Added '+' Button** */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
+            <IconButton onClick={handleAddNewTranscription} color="primary" title="Add New Transcription">
+              <IconPlus />
+            </IconButton>
             <IconButton onClick={toggleDrawer}>
               {drawerOpen ? <IconChevronLeft /> : <IconChevronRight />}
             </IconButton>
           </Box>
           <List>
             {sessions.map((session) => (
-              <ListItem 
+              <ListItem
                 key={session.id}
                 component="div"
-                sx={{ 
+                sx={{
                   cursor: 'pointer',
-                  bgcolor: session.id === activeSessionId ? 'action.selected' : 'inherit'
+                  bgcolor: session.id === activeSessionId ? 'action.selected' : 'inherit',
                 }}
                 onClick={() => setActiveSessionId(session.id)}
               >
@@ -300,26 +322,31 @@ function App() {
                       </Box>
                     ) : (
                       <>
-                        <ListItemText 
+                        <ListItemText
                           primary={session.name}
-                          secondary={new Date(session.timestamp).toLocaleString()} 
+                          secondary={new Date(session.timestamp).toLocaleString()}
                         />
                         <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
+                          <IconButton
+                            edge="end"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleStartEditing(session.id, session.name);
                             }}
+                            size="small"
+                            aria-label="edit"
                           >
                             <IconEdit size={18} />
                           </IconButton>
-                          <IconButton 
-                            edge="end" 
+                          <IconButton
+                            edge="end"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteSession(session.id);
                             }}
+                            size="small"
+                            color="error"
+                            aria-label="delete"
                           >
                             <IconTrash size={18} />
                           </IconButton>
@@ -333,6 +360,7 @@ function App() {
           </List>
         </Drawer>
 
+        {/* Main Content */}
         <Box
           component="main"
           sx={{
@@ -351,11 +379,12 @@ function App() {
               showNotification('Text copied to clipboard', 'success');
             }}
             onDelete={handleDeleteEntry}
-            selectedEntries={[]}
-            onSelectEntry={() => {}}
+            selectedEntries={[]} // You can implement selection logic if needed
+            onSelectEntry={() => {}} // You can implement selection logic if needed
           />
         </Box>
 
+        {/* Footer with Audio Recorder */}
         <Paper
           sx={{
             position: 'fixed',
@@ -379,6 +408,7 @@ function App() {
           />
         </Paper>
 
+        {/* View Settings Dialog */}
         <Dialog open={viewSettingsOpen} onClose={() => setViewSettingsOpen(false)}>
           <DialogTitle>View Settings</DialogTitle>
           <DialogContent>
@@ -419,6 +449,7 @@ function App() {
           </DialogActions>
         </Dialog>
 
+        {/* Whisper Settings Dialog */}
         <Dialog open={whisperSettingsOpen} onClose={() => setWhisperSettingsOpen(false)}>
           <DialogTitle>Whisper Settings</DialogTitle>
           <DialogContent>
@@ -470,6 +501,7 @@ function App() {
           </DialogActions>
         </Dialog>
 
+        {/* API Settings Dialog */}
         <Dialog open={apiSettingsOpen} onClose={() => setApiSettingsOpen(false)}>
           <DialogTitle>API Settings</DialogTitle>
           <DialogContent>
@@ -503,6 +535,7 @@ function App() {
           </DialogActions>
         </Dialog>
 
+        {/* Notification Component */}
         <Notification {...notificationProps} />
       </Box>
     </ThemeProvider>
