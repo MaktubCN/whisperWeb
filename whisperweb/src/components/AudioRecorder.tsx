@@ -8,6 +8,7 @@ interface AudioRecorderProps {
   onRecordingChange: (recording: boolean) => void;
   requestInterval: number;
   onAudioData: (blob: Blob) => void;
+  darkMode: boolean;
 }
 
 const AudioRecorder: React.FC<AudioRecorderProps> = ({
@@ -15,6 +16,7 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
   onRecordingChange,
   requestInterval,
   onAudioData,
+  darkMode,
 }) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -96,12 +98,26 @@ const AudioRecorder: React.FC<AudioRecorderProps> = ({
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
       <IconButton
-        color={isRecording ? 'secondary' : 'primary'}
+        color="inherit"
         onClick={() => onRecordingChange(!isRecording)}
+        sx={{
+          backgroundColor: darkMode ? '#FFFFFF' : '#000000',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          '&:hover': {
+            backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)',
+          },
+          marginLeft: 2,
+        }}
       >
-        {isRecording ? <IconPlayerPause /> : <IconPlayerPlay />}
+        {isRecording ? (
+          <IconPlayerPause color={darkMode ? '#000000' : '#FFFFFF'} />
+        ) : (
+          <IconPlayerPlay color={darkMode ? '#000000' : '#FFFFFF'} />
+        )}
       </IconButton>
       <IconButton onClick={handleDownload} disabled={chunksRef.current.length === 0}>
         <IconDownload />

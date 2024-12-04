@@ -12,6 +12,7 @@
   "dependencies": {
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
+    "@fontsource/inter": "^5.1.0",
     "@fontsource/roboto": "^5.1.0",
     "@mui/material": "^6.1.9",
     "@tabler/icons-react": "^3.24.0",

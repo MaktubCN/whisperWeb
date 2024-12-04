@@ -1,6 +1,6 @@
 export interface Settings {
   view: {
-    fontSize: string;
+    fontSize: '12' | '16' | '20';
     showTimestamp: boolean;
     language: string;
   };

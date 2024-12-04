@@ -24,7 +24,8 @@ const useTranscriptionService = ({
       try {
         const formData = new FormData();
         formData.append('file', blob, 'audio.wav');
-        formData.append('model', settings.api.model);
+        const modelToUse = settings.api.model === 'custom' ? customModel : settings.api.model;
+        formData.append('model', modelToUse);
 
         if (settings.whisper.recognitionLanguage !== 'auto') {
           formData.append('language', settings.whisper.recognitionLanguage);

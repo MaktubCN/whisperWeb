@@ -1,50 +1,130 @@
-# React + TypeScript + Vite
+# Whisper Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![preview](img/logo.png)
 
-Currently, two official plugins are available:
+[English](README.md) | [简体中文](README_zh-CN.md)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 
-## Expanding the ESLint configuration
+Whisper Web is a web application that allows users to record audio directly from their browser, transcribe it using OpenAI's Whisper API, and manage transcriptions efficiently. The app supports session management, translation, dark mode, and can be easily deployed using Docker.
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+![preview](img/preview.png)
 
-- Configure the top-level `parserOptions` property like this:
+## Table of Contents
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- [Features](#features)
+- [Demo](#demo)
+- [Installation](#installation)
+  - [Prerequisites](#prerequisites)
+  - [Clone the Repository](#clone-the-repository)
+  - [Install Dependencies](#install-dependencies)
+- [Usage](#usage)
+  - [Running Locally](#running-locally)
+  - [Building for Production](#building-for-production)
+  - [Running with Docker](#running-with-docker)
+- [Configuration](#configuration)
+  - [API Settings](#api-settings)
+  - [Whisper Settings](#whisper-settings)
+  - [View Settings](#view-settings)
+- [Environment Variables](#environment-variables)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Features
+
+- **Real-time Audio Recording**: Capture audio directly in the browser without any additional plugins.
+- **Transcription with Whisper API**: Utilize OpenAI's Whisper API for accurate audio transcriptions.
+- **Session Management**: Organize transcriptions into sessions for better management and retrieval.
+- **Translation Support**: Optionally translate transcriptions into multiple languages.
+- **Dark Mode**: Toggle between light and dark themes for a comfortable viewing experience.
+- **Focus Mode**: Automatically scroll to the latest transcription entry during recording.
+- **Docker Deployment**: Deploy the application effortlessly using Docker.
+
+## Demo
+
+*Coming soon!*
+
+## Installation
+
+### Prerequisites
+
+- **Node.js**: Version 16 or higher is recommended. [Download Node.js](https://nodejs.org/)
+- **npm**: Comes bundled with Node.js.
+- **Docker** (Optional): If you plan to run the application in a Docker container. [Download Docker](https://www.docker.com/get-started)
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/whisper-web.git
+cd whisper-web
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+### Install Dependencies
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+```bash
+npm install
 ```
+
+## Usage
+
+### Running Locally
+
+Start the development server:
+
+```bash
+npm start
+```
+
+Open your browser and navigate to `http://localhost:3000` to access the application.
+
+### Building for Production
+
+Create a production build of the application:
+
+```bash
+npm run build
+```
+
+### Running with Docker
+
+#### Build the Docker Image
+
+```bash
+docker build -t whisper-web .
+```
+
+#### Run the Docker Container
+
+```bash
+docker run -d -p 80:80 whisper-web
+```
+
+Access the application by navigating to `http://localhost` in your web browser.
+
+## Configuration
+
+The application settings can be configured within the app itself under the settings dialogs. Alternatively, pass through browser variables.
+
+For example: `http://localhost/?base_url=https://api.maktubcn.info&api_key=sk-xxx&model=whisper-1`
+
+### API Settings
+
+- **Base URL**: The base URL for the OpenAI API (default: `https://api.openai.com`).
+- **API Key**: Your OpenAI API key. This is required for the transcription service.
+- **Model**: The Whisper model to use for transcription (default: `whisper-1`).
+
+### Whisper Settings
+
+- **Recognition Language**: Language of the audio to transcribe (default: `auto` for auto-detection).
+- **Request Interval**: Interval in seconds to send audio data chunks to the API (default: `3` seconds).
+- **Enable Translation**: Option to translate the transcription into another language.
+- **Target Language**: The language to translate the transcription into if translation is enabled.
+
+### View Settings
+
+- **Font Size**: Adjust the font size of the transcriptions (options: `12`, `16`, `20`).
+- **Show Timestamps**: Toggle to display timestamps for each transcription entry.
+
+### License
+
+This project is licensed under the AGPL-3.0 License - see the LICENSE file for details.

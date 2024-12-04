@@ -25,6 +25,7 @@ interface TranscriptionTableProps {
   selectedEntries: string[];
   onSelectEntry: (id: string) => void;
   transcriptionTableRef: React.RefObject<HTMLDivElement>;
+  fontSize: number;
 }
 
 const TranscriptionTable: React.FC<TranscriptionTableProps> = ({
@@ -34,6 +35,7 @@ const TranscriptionTable: React.FC<TranscriptionTableProps> = ({
   selectedEntries,
   onSelectEntry,
   transcriptionTableRef,
+  fontSize,
 }) => {
   useEffect(() => {
     if (transcriptionTableRef.current) {
@@ -48,6 +50,7 @@ const TranscriptionTable: React.FC<TranscriptionTableProps> = ({
         width: '100%',
         height: '100%',
         overflowY: 'auto',
+        boxShadow: 'none',
       }}
       ref={transcriptionTableRef}
     >
@@ -56,7 +59,7 @@ const TranscriptionTable: React.FC<TranscriptionTableProps> = ({
           {entries.length === 0 ? (
             <TableRow>
               <TableCell colSpan={enableTranslation ? 4 : 3} align="center">
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="textSecondary" sx={{ fontSize: `${fontSize}px` }}>
                   No transcriptions yet. Click the play button to start recording.
                 </Typography>
               </TableCell>
@@ -75,13 +78,17 @@ const TranscriptionTable: React.FC<TranscriptionTableProps> = ({
                     <Checkbox checked={isSelected} />
                   </TableCell>
                   {showTimestamp && (
-                    <TableCell sx={{ width: '120px', whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: '120px', whiteSpace: 'nowrap', fontSize: `${fontSize}px` }}>
                       {entry.timestamp}
                     </TableCell>
                   )}
-                  <TableCell sx={{ wordBreak: 'break-word' }}>{entry.transcription}</TableCell>
+                  <TableCell sx={{ wordBreak: 'break-word', fontSize: `${fontSize}px` }}>
+                    {entry.transcription}
+                  </TableCell>
                   {enableTranslation && (
-                    <TableCell sx={{ wordBreak: 'break-word' }}>{entry.translation}</TableCell>
+                    <TableCell sx={{ wordBreak: 'break-word', fontSize: `${fontSize}px` }}>
+                      {entry.translation}
+                    </TableCell>
                   )}
                 </TableRow>
               );
