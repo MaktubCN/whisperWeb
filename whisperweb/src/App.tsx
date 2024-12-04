@@ -130,6 +130,7 @@ function App() {
 
   const { processAudioData } = useTranscriptionService({
     settings,
+    customModel, // Pass customModel here
     onTranscriptionComplete: handleTranscriptionComplete,
     onError: handleTranscriptionError,
   });
@@ -624,8 +625,8 @@ function App() {
         <Backdrop open={drawerOpen} onClick={toggleDrawer} sx={{ zIndex: (theme) => theme.zIndex.drawer - 1 }} />
 
         {/* Combined Settings Dialog */}
-        <Dialog open={whisperSettingsOpen} onClose={() => setWhisperSettingsOpen(false)}>
-          <DialogTitle>Settings</DialogTitle>
+      <Dialog open={whisperSettingsOpen} onClose={() => setWhisperSettingsOpen(false)}>
+        <DialogTitle>Settings</DialogTitle>
           <DialogContent>
             <Typography variant="subtitle1">View Settings</Typography>
             <FormControl fullWidth margin="normal">
@@ -680,7 +681,7 @@ function App() {
               margin="normal"
               type="number"
               label="Request Interval (seconds)"
-              value={String(settings.whisper.requestInterval)}
+              value={settings.whisper.requestInterval} // Keep as number
               onChange={(e) =>
                 handleSettingsChange('whisper', 'requestInterval', Number(e.target.value))
               }
