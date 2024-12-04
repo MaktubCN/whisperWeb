@@ -703,10 +703,11 @@ function App() {
               margin="normal"
               type="number"
               label="Request Interval (seconds)"
-              value={settings.whisper.requestInterval} // 确保这是一个数字
-              onChange={(e) =>
-                handleSettingsChange('whisper', 'requestInterval', Number(e.target.value))
-              }
+              value={Number(settings.whisper.requestInterval)} // 强制转换为数字
+              onChange={(e) => {
+                const newValue = Number(e.target.value); // 确保用户输入被转换为数字
+                handleSettingsChange('whisper', 'requestInterval', newValue);
+              }}
             />
             <FormControlLabel
               control={
