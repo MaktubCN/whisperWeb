@@ -1,4 +1,4 @@
-// App.tsx
+// src/App.tsx
 import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   ThemeProvider,
@@ -79,6 +79,7 @@ const defaultSettings: Settings = {
 };
 
 function App() {
+  // 声明所有的 state 变量
   const [darkMode, setDarkMode] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -86,14 +87,17 @@ function App() {
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [newSessionName, setNewSessionName] = useState('');
 
-  // Dialog states
+  // 对话框状态
   const [whisperSettingsOpen, setWhisperSettingsOpen] = useState(false);
   const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
 
-  // Focus Mode State
+  // 聚焦模式状态
   const [focusMode, setFocusMode] = useState(true);
 
+  // 通知钩子
   const { showNotification, notificationProps } = useNotification();
+
+  // 会话管理钩子
   const {
     sessions,
     activeSessionId,
@@ -107,20 +111,26 @@ function App() {
     updateSessionEntries,
   } = useSessionManagement();
 
-  // New State for Recording Start Time and Duration
+  // 录音开始时间和持续时间
   const [recordingStartTime, setRecordingStartTime] = useState<Date | null>(null);
   const [recordingDuration, setRecordingDuration] = useState<string>('00:00:00');
 
+  // 在使用前声明 customModel
+  const [customModel, setCustomModel] = useState<string>('');
+
+  // 转录完成处理函数
   const handleTranscriptionComplete = useCallback(
     (entry: TranscriptionEntry) => {
       if (activeSessionId) {
         addEntryToSession(activeSessionId, entry);
+        // 可选：显示成功通知
         // showNotification('Transcription completed successfully', 'success');
       }
     },
     [activeSessionId, addEntryToSession]
   );
 
+  // 转录错误处理函数
   const handleTranscriptionError = useCallback(
     (error: string) => {
       showNotification(`Transcription failed: ${error}`, 'error');
@@ -128,13 +138,15 @@ function App() {
     [showNotification]
   );
 
+  // 使用 transcription service 钩子，并传递 customModel
   const { processAudioData } = useTranscriptionService({
     settings,
-    customModel, // Pass customModel here
+    customModel, // 确保在声明后传递
     onTranscriptionComplete: handleTranscriptionComplete,
     onError: handleTranscriptionError,
   });
 
+  // 创建 Material UI 主题
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
@@ -158,11 +170,12 @@ function App() {
     },
   });
 
+  // 保存设置到存储
   useEffect(() => {
     saveSettings(settings);
   }, [settings]);
 
-  // Effect to Update Recording Duration
+  // 更新录音持续时间
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
@@ -188,7 +201,7 @@ function App() {
     };
   }, [isRecording, recordingStartTime]);
 
-  // Auto-select or create session on initial load
+  // 初始加载时自动选择或创建会话
   useEffect(() => {
     if (sessions.length > 0) {
       const latestSession = sessions[sessions.length - 1];
@@ -199,6 +212,7 @@ function App() {
     }
   }, [sessions, createNewSession, setActiveSessionId]);
 
+  // 从 URL 参数更新设置
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const baseUrl = urlParams.get('base_url');
@@ -226,20 +240,23 @@ function App() {
 
     if (updated) {
       showNotification('Successfully updated parameters from the URL', 'success');
-      // Remove query parameters from URL
+      // 移除 URL 中的查询参数
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on initial render
+  }, []); // 仅在组件初次渲染时执行
 
+  // 切换暗模式
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
 
+  // 切换侧边栏抽屉
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);
   };
 
+  // 处理设置更改
   const handleSettingsChange = <T extends keyof Settings, K extends keyof Settings[T]>(
     category: T,
     field: K,
@@ -254,6 +271,7 @@ function App() {
     }));
   };
 
+  // 处理录音状态更改
   const handleRecordingChange = (recording: boolean) => {
     if (recording && !activeSessionId) {
       const newSessionId = createNewSession();
@@ -264,24 +282,27 @@ function App() {
     setSessionRecordingState(recording);
 
     if (recording) {
-      // Set Recording Start Time
+      // 设置录音开始时间
       setRecordingStartTime(new Date());
     } else {
       setRecordingStartTime(null);
     }
   };
 
+  // 处理接收到的音频数据
   const handleAudioData = async (blob: Blob) => {
-    // Prevent processing if not recording
+    // 如果未录音，则不处理
     if (!isRecording) return;
     await processAudioData(blob);
   };
 
+  // 开始编辑会话名称
   const handleStartEditing = (sessionId: string, currentName: string) => {
     setEditingSessionId(sessionId);
     setNewSessionName(currentName);
   };
 
+  // 保存会话名称
   const handleSaveSessionName = () => {
     if (editingSessionId && newSessionName.trim()) {
       renameSession(editingSessionId, newSessionName.trim());
@@ -290,11 +311,13 @@ function App() {
     }
   };
 
+  // 删除会话
   const handleDeleteSession = (sessionId: string) => {
     deleteSession(sessionId);
     showNotification('Session deleted successfully', 'success');
   };
 
+  // 删除选定的条目
   const handleDeleteEntries = (entryIds: string[]) => {
     if (activeSessionId) {
       const entries = getSessionEntries(activeSessionId);
@@ -305,6 +328,7 @@ function App() {
     }
   };
 
+  // 复制选定的条目
   const handleCopyEntries = (entryIds: string[]) => {
     if (activeSessionId) {
       const entries = getSessionEntries(activeSessionId);
@@ -317,14 +341,14 @@ function App() {
     }
   };
 
-  // Handle Adding New Transcription
+  // 添加新转录会话
   const handleAddNewTranscription = () => {
     const newSessionId = createNewSession();
     setActiveSessionId(newSessionId);
     setIsRecording(false);
   };
 
-  // Selection State
+  // 选择状态
   const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
 
   const handleSelectEntry = (id: string) => {
@@ -333,33 +357,31 @@ function App() {
     );
   };
 
-  // Reference to the TranscriptionTable
+  // 引用 TranscriptionTable
   const transcriptionTableRef = useRef<HTMLDivElement | null>(null);
 
-  // Get entries length safely
+  // 获取条目长度
   const entries = activeSessionId ? getSessionEntries(activeSessionId) : [];
   const entriesLength = entries.length;
 
-  // Use useEffect to ensure scrolling happens after DOM updates
+  // 确保在 DOM 更新后滚动
   useEffect(() => {
     if (focusMode && transcriptionTableRef.current) {
       transcriptionTableRef.current.scrollTop = transcriptionTableRef.current.scrollHeight;
     }
   }, [entriesLength, focusMode]);
 
-  // Toggle Focus Mode
+  // 切换聚焦模式
   const toggleFocusMode = () => {
     setFocusMode(!focusMode);
   };
 
-  // Action Bar Visibility
+  // 动作栏可见性
   const hasSelectedEntries = selectedEntries.length > 0;
 
-  // Get Recording Start Time and Duration for Footer
+  // 获取录音开始时间和持续时间
   const startTime = recordingStartTime ? recordingStartTime.toLocaleTimeString() : '--:--:--';
   const duration = recordingDuration;
-
-  const [customModel, setCustomModel] = useState<string>('');
 
   return (
     <ThemeProvider theme={theme}>
@@ -378,11 +400,11 @@ function App() {
           }}
         >
           <Toolbar>
-            {/* Sidebar Toggle Button */}
+            {/* 侧边栏切换按钮 */}
             <IconButton edge="start" color="inherit" onClick={toggleDrawer} sx={{ mr: 2 }}>
               <IconMenu2 />
             </IconButton>
-            {/* Centered WhisperWeb Text */}
+            {/* 居中的 WhisperWeb 文本 */}
             <Typography
               variant="h6"
               component="div"
@@ -390,7 +412,7 @@ function App() {
             >
               Whisper Web
             </Typography>
-            {/* Right-side Icons */}
+            {/* 右侧图标 */}
             <IconButton color="inherit" onClick={toggleDarkMode}>
               {darkMode ? <IconSun /> : <IconMoon />}
             </IconButton>
@@ -403,7 +425,7 @@ function App() {
           </Toolbar>
         </AppBar>
 
-        {/* Main Content */}
+        {/* 主内容 */}
         <Box
           component="main"
           sx={{
@@ -416,7 +438,7 @@ function App() {
             position: 'relative',
           }}
         >
-          {/* Floating Action Bar for Selected Entries */}
+          {/* 选定条目的浮动操作栏 */}
           {hasSelectedEntries && (
             <Box
               sx={{
@@ -451,7 +473,7 @@ function App() {
             </Box>
           )}
 
-          {/* Container for TranscriptionTable */}
+          {/* TranscriptionTable 容器 */}
           <Box sx={{ flexGrow: 1, width: '100%', overflow: 'hidden' }}>
             <TranscriptionTable
               entries={entries}
@@ -465,7 +487,7 @@ function App() {
           </Box>
         </Box>
 
-        {/* Footer with Audio Recorder */}
+        {/* 带有 Audio Recorder 的页脚 */}
         <Paper
           sx={{
             position: 'fixed',
@@ -484,12 +506,12 @@ function App() {
         >
           {isRecording ? (
             <>
-              {/* Start Time on the Left */}
+              {/* 左侧的开始时间 */}
               <Typography variant="body1" sx={{ flexGrow: 1 }}>
                 Start: {startTime}
               </Typography>
 
-              {/* Centered Focus Mode and Play Buttons */}
+              {/* 中间的聚焦模式和录音按钮 */}
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <IconButton color="inherit" onClick={toggleFocusMode}>
                   {focusMode ? <IconEye /> : <IconEyeOff />}
@@ -503,13 +525,13 @@ function App() {
                 />
               </Box>
 
-              {/* Duration on the Right */}
+              {/* 右侧的持续时间 */}
               <Typography variant="body1" sx={{ flexGrow: 1, textAlign: 'right' }}>
                 Duration: {duration}
               </Typography>
             </>
           ) : (
-            // When not recording, center the focus mode and play buttons
+            // 未录音时，居中显示聚焦模式和录音按钮
             <Box sx={{ display: 'flex', alignItems: 'center', margin: '0 auto' }}>
               <IconButton color="inherit" onClick={toggleFocusMode}>
                 {focusMode ? <IconEye /> : <IconEyeOff />}
@@ -525,7 +547,7 @@ function App() {
           )}
         </Paper>
 
-        {/* Drawer (Sidebar) */}
+        {/* 侧边栏 Drawer */}
         <Drawer
           variant="temporary"
           open={drawerOpen}
@@ -540,19 +562,19 @@ function App() {
             },
           }}
         >
-          {/* Drawer Header */}
+          {/* Drawer 头部 */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
             <IconButton onClick={toggleDrawer}>
               <IconChevronLeft />
             </IconButton>
           </Box>
-          {/* Add New Transcription Button */}
+          {/* 添加新转录按钮 */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 1 }}>
             <IconButton color="inherit" onClick={handleAddNewTranscription} title="Add New Transcription">
               <IconPlus />
             </IconButton>
           </Box>
-          {/* Sessions List */}
+          {/* 会话列表 */}
           <List>
             {sessions.map((session) => (
               <ListItem
@@ -621,12 +643,12 @@ function App() {
           </List>
         </Drawer>
 
-        {/* Backdrop when the drawer is open */}
+        {/* 当 Drawer 打开时显示 Backdrop */}
         <Backdrop open={drawerOpen} onClick={toggleDrawer} sx={{ zIndex: (theme) => theme.zIndex.drawer - 1 }} />
 
-        {/* Combined Settings Dialog */}
-      <Dialog open={whisperSettingsOpen} onClose={() => setWhisperSettingsOpen(false)}>
-        <DialogTitle>Settings</DialogTitle>
+        {/* 综合设置对话框 */}
+        <Dialog open={whisperSettingsOpen} onClose={() => setWhisperSettingsOpen(false)}>
+          <DialogTitle>Settings</DialogTitle>
           <DialogContent>
             <Typography variant="subtitle1">View Settings</Typography>
             <FormControl fullWidth margin="normal">
@@ -681,7 +703,7 @@ function App() {
               margin="normal"
               type="number"
               label="Request Interval (seconds)"
-              value={settings.whisper.requestInterval} // Keep as number
+              value={settings.whisper.requestInterval} // 确保这是一个数字
               onChange={(e) =>
                 handleSettingsChange('whisper', 'requestInterval', Number(e.target.value))
               }
@@ -718,7 +740,7 @@ function App() {
           </DialogActions>
         </Dialog>
 
-        {/* API Settings Dialog */}
+        {/* API 设置对话框 */}
         <Dialog open={apiSettingsOpen} onClose={() => setApiSettingsOpen(false)}>
           <DialogTitle>API Settings</DialogTitle>
           <DialogContent>
@@ -764,10 +786,11 @@ function App() {
           </DialogActions>
         </Dialog>
 
-        {/* Notification Component */}
+        {/* 通知组件 */}
         <Notification {...notificationProps} />
       </Box>
     </ThemeProvider>
   );
 }
+
 export default App;
