@@ -61,7 +61,7 @@ const drawerWidth = 240;
 
 const defaultSettings: Settings = {
   view: {
-    fontSize: '16',
+    fontSize: 16,
     showTimestamp: true,
     language: 'en',
   },
@@ -657,9 +657,9 @@ function App() {
                 value={settings.view.fontSize}
                 onChange={(e) => handleSettingsChange('view', 'fontSize', e.target.value as any)}
               >
-                <MenuItem value="12">12</MenuItem>
-                <MenuItem value="16">16</MenuItem>
-                <MenuItem value="20">20</MenuItem>
+                <MenuItem value={12}>12</MenuItem>
+                <MenuItem value={16}>16</MenuItem>
+                <MenuItem value={20}>20</MenuItem>
               </Select>
             </FormControl>
             <FormControlLabel
