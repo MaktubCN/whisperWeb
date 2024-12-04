@@ -1,16 +1,17 @@
-// useTranscriptionService.ts
 import { useState, useCallback } from 'react';
 import { Settings, TranscriptionEntry } from '../types';
 import { processTranscriptionWithTranslation } from '../services/translationService';
 
 interface UseTranscriptionServiceProps {
   settings: Settings;
+  customModel: string; // Add this line
   onTranscriptionComplete: (entry: TranscriptionEntry) => void;
   onError: (error: string) => void;
 }
 
 const useTranscriptionService = ({
   settings,
+  customModel, // Destructure customModel here
   onTranscriptionComplete,
   onError,
 }: UseTranscriptionServiceProps) => {
@@ -74,7 +75,7 @@ const useTranscriptionService = ({
         setIsProcessing(false);
       }
     },
-    [settings, onTranscriptionComplete, onError] // Removed isProcessing from dependencies
+    [isProcessing, settings, customModel, onTranscriptionComplete, onError] // Add customModel to dependencies
   );
 
   return {
@@ -84,4 +85,3 @@ const useTranscriptionService = ({
 };
 
 export default useTranscriptionService;
-  
