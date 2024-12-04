@@ -1,5 +1,6 @@
   // App.tsx
-  import React, { useState, useEffect, useCallback, useLayoutEffect, useRef } from 'react';
+  import { useState, useEffect, useCallback, useRef } from 'react';
+
   import {
     ThemeProvider,
     CssBaseline,
@@ -569,19 +570,16 @@
                 >
                   {editingSessionId === session.id ? (
                     <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                      <TextField
-                        value={newSessionName}
-                        onChange={(e) => setNewSessionName(e.target.value)}
-                        size="small"
-                        fullWidth
-                        autoFocus
-                        onBlur={handleSaveSessionName}
-                        onKeyPress={(e) => {
-                          if (e.key === 'Enter') {
-                            handleSaveSessionName();
+                        <TextField
+                          fullWidth
+                          margin="normal"
+                          type="number"
+                          label="Request Interval (seconds)"
+                          value={settings.whisper.requestInterval}
+                          onChange={(e) =>
+                            handleSettingsChange('whisper', 'requestInterval', Number(e.target.value))
                           }
-                        }}
-                      />
+                        />
                     </Box>
                   ) : (
                     <>
@@ -628,7 +626,9 @@
           <Dialog open={whisperSettingsOpen} onClose={() => setWhisperSettingsOpen(false)}>
             <DialogTitle>Settings</DialogTitle>
             <DialogContent>
-              <Typography variant="h7">View Settings</Typography>
+            <Typography variant="subtitle1" sx={{ mt: 2 }}>
+              View Settings
+            </Typography>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Font Size</InputLabel>
                 <Select
@@ -650,7 +650,7 @@
                 label="Show Timestamps"
               />
               <br></br><br></br>
-              <Typography variant="h7" sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" sx={{ mt: 2 }}>
                 Whisper Settings
               </Typography>
               <FormControl fullWidth margin="normal">
