@@ -32,6 +32,7 @@ import {
 import {
   IconSettings,
   IconKey,
+  IconBrandGithub,
   IconMoon,
   IconSun,
   IconChevronLeft,
@@ -111,7 +112,7 @@ function App() {
     updateSessionEntries,
   } = useSessionManagement();
 
-  // 录音开始时间和持续时间
+  // 录音开始时间和持续时间 
   const [recordingStartTime, setRecordingStartTime] = useState<Date | null>(null);
   const [recordingDuration, setRecordingDuration] = useState<string>('00:00:00');
 
@@ -413,6 +414,9 @@ function App() {
               Whisper Web
             </Typography>
             {/* 右侧图标 */}
+            <IconButton color="inherit" onClick={() => window.open('https://github.com/MaktubCN/whisperWeb', '_blank')}>
+              <IconBrandGithub />
+            </IconButton>
             <IconButton color="inherit" onClick={toggleDarkMode}>
               {darkMode ? <IconSun /> : <IconMoon />}
             </IconButton>
