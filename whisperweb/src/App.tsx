@@ -128,13 +128,10 @@ function App() {
     [showNotification]
   );
 
-  const [customModel, setCustomModel] = useState<string>('');
-
   const { processAudioData } = useTranscriptionService({
     settings,
     onTranscriptionComplete: handleTranscriptionComplete,
     onError: handleTranscriptionError,
-    customModel, // 确保 customModel 被传递
   });
 
   const theme = createTheme({
@@ -228,11 +225,11 @@ function App() {
 
     if (updated) {
       showNotification('Successfully updated parameters from the URL', 'success');
-      // 移除 URL 中的查询参数
+      // Remove query parameters from URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 仅在组件初次渲染时执行
+  }, []); // Only run on initial render
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -360,6 +357,8 @@ function App() {
   // Get Recording Start Time and Duration for Footer
   const startTime = recordingStartTime ? recordingStartTime.toLocaleTimeString() : '--:--:--';
   const duration = recordingDuration;
+
+  const [customModel, setCustomModel] = useState<string>('');
 
   return (
     <ThemeProvider theme={theme}>
@@ -658,7 +657,9 @@ function App() {
               <InputLabel>Recognition Language</InputLabel>
               <Select
                 value={settings.whisper.recognitionLanguage}
-                onChange={(e) => handleSettingsChange('whisper', 'recognitionLanguage', e.target.value as any)}
+                onChange={(e) =>
+                  handleSettingsChange('whisper', 'recognitionLanguage', e.target.value as any)
+                }
               >
                 <MenuItem value="auto">Auto Detect</MenuItem>
                 <MenuItem value="en">English</MenuItem>
@@ -679,7 +680,7 @@ function App() {
               margin="normal"
               type="number"
               label="Request Interval (seconds)"
-              value={settings.whisper.requestInterval}
+              value={String(settings.whisper.requestInterval)}
               onChange={(e) =>
                 handleSettingsChange('whisper', 'requestInterval', Number(e.target.value))
               }
@@ -688,7 +689,9 @@ function App() {
               control={
                 <Switch
                   checked={settings.whisper.enableTranslation}
-                  onChange={(e) => handleSettingsChange('whisper', 'enableTranslation', e.target.checked)}
+                  onChange={(e) =>
+                    handleSettingsChange('whisper', 'enableTranslation', e.target.checked)
+                  }
                 />
               }
               label="Enable Translation"
@@ -698,7 +701,9 @@ function App() {
                 <InputLabel>Target Language</InputLabel>
                 <Select
                   value={settings.whisper.targetLanguage}
-                  onChange={(e) => handleSettingsChange('whisper', 'targetLanguage', e.target.value as any)}
+                  onChange={(e) =>
+                    handleSettingsChange('whisper', 'targetLanguage', e.target.value as any)
+                  }
                 >
                   <MenuItem value="en">English</MenuItem>
                   <MenuItem value="es">Spanish</MenuItem>
@@ -764,5 +769,4 @@ function App() {
     </ThemeProvider>
   );
 }
-
 export default App;
