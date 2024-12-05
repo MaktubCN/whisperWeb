@@ -771,7 +771,7 @@ function App() {
                 onChange={(e) => handleSettingsChange('api', 'model', e.target.value as any)}
               >
                 <MenuItem value="whisper-1">whisper-1</MenuItem>
-                <MenuItem value="openai/whisper-large-v2">openai/whisper-large-v2</MenuItem>
+                <MenuItem value="openai/whisper-large-v3-turbo">openai/whisper-large-v3-turbo</MenuItem>
                 <MenuItem value="custom">Custom Model</MenuItem>
               </Select>
             </FormControl>
